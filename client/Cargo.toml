@@ -1,0 +1,13 @@
+[package]
+name = "rust-blog"
+version = "0.1.0"
+edition = "2021"
+description = "Simple blog app"
+readme = "README.md"
+repository = "https://github.com/YurySolovyov/rust-blog-client"
+license = "MIT"
+keywords = ["yew", "trunk"]
+categories = ["gui", "wasm", "web-programming"]
+
+[dependencies]
+yew = "0.19"
