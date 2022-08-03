@@ -5,18 +5,16 @@ body {
 }
 
 body {
-  align-items: center;
   display: flex;
   justify-content: center;
 
-  background: linear-gradient(to bottom right, #444444, #009a5b);
+  background: linear-gradient(to bottom right, #444444, #03d1ff);
   font-size: 1.5rem;
 }
 
 main {
   color: #fff6d5;
   font-family: sans-serif;
-  text-align: center;
 }
 
 .logo {
@@ -32,4 +30,14 @@ main {
 h1 + .subtitle {
   display: block;
   margin-top: -1em;
+}
+
+.posts-layout {
+  width: 1024px;
+  margin: 0 auto;
+}
+
+
+.post h2 a {
+  color: #fff6d5;
 }
