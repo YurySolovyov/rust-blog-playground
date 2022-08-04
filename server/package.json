@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "description": "Blog server",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "start": "node index.js"
+  },
   "author": "Yury Solovyov",
   "license": "MIT",
   "dependencies": {

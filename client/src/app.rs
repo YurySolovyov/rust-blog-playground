@@ -1,6 +1,6 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use yew::{function_component, html, Properties};
+use yew::{function_component, html, Properties, Children};
 
 use serde::Deserialize;
 use reqwasm::http::Request;
@@ -9,7 +9,14 @@ use reqwasm::http::Request;
 pub struct Post {
   pub id: String,
   pub title: String,
-  pub body: String,
+  pub body: Vec<String>,
+}
+
+
+#[derive(Properties, PartialEq)]
+pub struct LayoutProps {
+    #[prop_or_default]
+    pub children: Children,
 }
 
 #[derive(Properties, PartialEq)]
@@ -22,10 +29,10 @@ pub fn shot_post(props: &PostProps) -> Html {
   let post = props.post.clone();
 
   html! {
-    <div key={post.id.clone()} class={classes!("post")}>
-      <h2>
+    <div key={post.id.clone()} class={classes!("post", "short")}>
+      <h3>
         <Link<Route> to={Route::Show { id: post.id }}>{ &post.title }</Link<Route>>
-      </h2>
+      </h3>
     </div>
   }
 }
@@ -35,10 +42,32 @@ pub fn full_post(props: &PostProps) -> Html {
   let post = props.post.clone();
 
   html! {
-    <div key={post.id} class={classes!("post")}>
-      <h2>{post.title}</h2>
-      <p>{post.body}</p>
+    <div key={post.id} class={classes!("post", "full")}>
+      <h3>{post.title}</h3>
+      <div class={classes!("post-body")}>
+        {
+          post.body.iter().map(|paragraph| {
+            html! { <p>{paragraph}</p> }
+          }).collect::<Html>()
+        }
+      </div>
     </div>
+  }
+}
+
+#[function_component(Layout)]
+pub fn layout(props: &LayoutProps) -> Html {
+  html! {
+    <main>
+      <nav>
+        <Link<Route> to={Route::Index}>{ "Home" }</Link<Route>>
+        <Link<Route> to={Route::Create}>{ "Write" }</Link<Route>>
+      </nav>
+
+      <div class={classes!("layout")}>
+        {for props.children.iter()}
+      </div>
+    </main>
   }
 }
 
@@ -65,8 +94,8 @@ pub fn index() -> Html {
   }
 
   html! {
-    <div class={classes!("posts-layout")}>
-      <h1>{ "Latest Posts" }</h1>
+    <Layout>
+      <h2>{ "Latest Posts" }</h2>
       {
         if posts.is_empty() {
           html! { "Loading" }
@@ -78,7 +107,7 @@ pub fn index() -> Html {
           }
         }
       }
-    </div>
+    </Layout>
   }
 }
 
@@ -111,10 +140,8 @@ pub fn show(props: &ShowProps) -> Html {
   }
 
   html! {
-    <div class={classes!("posts-layout")}>
-      <h2>
-        <Link<Route> to={Route::Index}>{ "Home" }</Link<Route>>
-      </h2>
+    <Layout>
+
 
       {
         if let Some(post) = &*post {
@@ -125,7 +152,37 @@ pub fn show(props: &ShowProps) -> Html {
           html! { "Loading" }
         }
       }
-    </div>
+    </Layout>
+  }
+}
+
+#[function_component(Create)]
+pub fn create() -> Html {
+  html! {
+    <Layout>
+      <h2>{ "New post" }</h2>
+      <form>
+        <div class={classes!("input")}>
+          <span class={classes!("label")}>
+            { "Title" }
+          </span>
+
+          <input type="text" />
+        </div>
+
+        <div class={classes!("input")}>
+          <span class={classes!("label")}>
+            { "Body" }
+          </span>
+
+          <textarea rows={10}></textarea>
+        </div>
+
+        <div class={classes!("input")}>
+          <button>{ "Submit" }</button>
+        </div>
+      </form>
+    </Layout>
   }
 }
 
@@ -140,6 +197,9 @@ enum Route {
   #[at("/")]
   Index,
 
+  #[at("/post/new")]
+  Create,
+
   #[at("/post/:id")]
   Show { id: String },
 
@@ -152,6 +212,7 @@ fn switch(routes: &Route) -> Html {
   match routes {
     Route::Index => html! { <Index /> },
     Route::Show { id } => html! { <Show id={id.clone()} /> },
+    Route::Create => html! { <Create /> },
 
     _ => html! { <NotFound /> },
   }
@@ -161,9 +222,7 @@ fn switch(routes: &Route) -> Html {
 pub fn app() -> Html {
   html! {
     <BrowserRouter>
-      <main>
-        <Switch<Route> render={Switch::render(switch)} />
-      </main>
+      <Switch<Route> render={Switch::render(switch)} />
     </BrowserRouter>
   }
 }
