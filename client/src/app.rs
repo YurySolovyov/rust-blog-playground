@@ -1,22 +1,20 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
+
+use web_sys::{HtmlInputElement,HtmlTextAreaElement};
 use yew::{function_component, html, Properties, Children};
 
-use serde::Deserialize;
+use serde::{Serialize,Deserialize};
 use reqwasm::http::Request;
 
-#[derive(Clone, PartialEq, Deserialize, Properties)]
+use log::info;
+use uuid::Uuid;
+
+#[derive(Clone, PartialEq, Serialize, Deserialize, Properties, Debug)]
 pub struct Post {
   pub id: String,
   pub title: String,
   pub body: Vec<String>,
-}
-
-
-#[derive(Properties, PartialEq)]
-pub struct LayoutProps {
-    #[prop_or_default]
-    pub children: Children,
 }
 
 #[derive(Properties, PartialEq)]
@@ -53,6 +51,12 @@ pub fn full_post(props: &PostProps) -> Html {
       </div>
     </div>
   }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct LayoutProps {
+    #[prop_or_default]
+    pub children: Children,
 }
 
 #[function_component(Layout)]
@@ -141,8 +145,6 @@ pub fn show(props: &ShowProps) -> Html {
 
   html! {
     <Layout>
-
-
       {
         if let Some(post) = &*post {
           html! {
@@ -158,6 +160,69 @@ pub fn show(props: &ShowProps) -> Html {
 
 #[function_component(Create)]
 pub fn create() -> Html {
+  let history = use_history().unwrap();
+  let title = use_state(|| String::from(""));
+  let body = use_state(|| String::from(""));
+
+  let on_title_change = {
+    let title = title.clone();
+
+    move |e: InputEvent| {
+      let input: HtmlInputElement = e.target_unchecked_into();
+      let value = input.value();
+
+      title.set(value);
+    }
+  };
+
+  let on_body_change = {
+    let body = body.clone();
+
+    move |e: InputEvent| {
+      let input: HtmlTextAreaElement = e.target_unchecked_into();
+      let value = input.value();
+
+      body.set(value);
+    }
+  };
+
+  let onsubmit = {
+    let body = body.clone();
+    let title = title.clone();
+
+    move |e: MouseEvent| {
+      e.prevent_default();
+      let history = history.clone();
+
+      let id = Uuid::new_v4();
+      let new_title = (*title).clone();
+      let new_body : Vec<String> = (*body).split("\n").map(|s| s.to_string()).collect();
+
+      let post = Post {
+        id: id.to_string(),
+        title: new_title,
+        body: new_body
+      };
+
+      wasm_bindgen_futures::spawn_local(async move {
+        let serialized = serde_json::to_string(&post).unwrap();
+
+        let response: Post = Request::post("/api/posts")
+          .header("content-type", "application/json")
+          .body(serialized)
+          .send()
+          .await
+          .unwrap()
+          .json()
+          .await
+          .unwrap();
+
+
+        history.push(Route::Show { id: response.id.clone() });
+      });
+    }
+  };
+
   html! {
     <Layout>
       <h2>{ "New post" }</h2>
@@ -167,7 +232,7 @@ pub fn create() -> Html {
             { "Title" }
           </span>
 
-          <input type="text" />
+          <input type="text" oninput={on_title_change} />
         </div>
 
         <div class={classes!("input")}>
@@ -175,11 +240,11 @@ pub fn create() -> Html {
             { "Body" }
           </span>
 
-          <textarea rows={10}></textarea>
+          <textarea rows={10} oninput={on_body_change}></textarea>
         </div>
 
         <div class={classes!("input")}>
-          <button>{ "Submit" }</button>
+          <button onclick={onsubmit}>{ "Submit" }</button>
         </div>
       </form>
     </Layout>

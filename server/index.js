@@ -14,6 +14,8 @@ const posts = new Array(5).fill(null).map(() => ({
 
 const static = express.static(path.resolve('../client/dist'));
 
+app.use(express.json());
+
 app.get('/api/posts', (req, res) => {
   res.json(posts);
 });
@@ -23,7 +25,11 @@ app.get('/api/posts/:id', (req, res) => {
 });
 
 app.post('/api/posts', (req, res) => {
-  //
+  let post = req.body;
+
+  posts.push(post);
+
+  res.json(post);
 });
 
 app.use(static);
